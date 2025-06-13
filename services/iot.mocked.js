@@ -1,47 +1,14 @@
 const SENSORS = {
     'sensor-1': {
-        name: 'Living Room',
-        description: 'Basic sensor in the middle of the living room.',
+        name: 'Josh',
+        description: 'RTLS sensor.',
         groupName: 'Level 1',
         location: {
-            x: 31.92,
-            y: 11.49,
-            z: -12.97
+            x: 0,
+            y: 0,
+            z: 0
         },
-        objectId: 4124
-    },
-    'sensor-2': {
-        name: 'Dining Table',
-        description: 'Basic sensor at the dining table.',
-        groupName: 'Level 1',
-        location: {
-            x: -10,
-            y: 41.64,
-            z: -12.15
-        },
-        objectId: 4111
-    },
-    'sensor-3': {
-        name: 'Kitchen',
-        description: 'Basic sensor in the kitchen.',
-        groupName: 'Level 1',
-        location: {
-            x: 10,
-            y: 41.64,
-            z: -12.15
-        },
-        objectId: 4111
-    },
-    'sensor-4': {
-        name: 'Bedroom',
-        description: 'Basic sensor in the bedroom.',
-        groupName: 'Level 2',
-        location: {
-            x: -7.46,
-            y: 41.47,
-            z: 2.97
-        },
-        objectId: 4085
+        objectId: 1  // Root node - should always exist
     }
 };
 
@@ -80,18 +47,6 @@ async function getSamples(timerange, resolution = 32) {
             'sensor-1': {
                 'temp': generateRandomValues(18.0, 28.0, resolution, 1.0),
                 'co2': generateRandomValues(540.0, 600.0, resolution, 5.0)
-            },
-            'sensor-2': {
-                'temp': generateRandomValues(20.0, 24.0, resolution, 1.0),
-                'co2': generateRandomValues(540.0, 600.0, resolution, 5.0)
-            },
-            'sensor-3': {
-                'temp': generateRandomValues(24.0, 28.0, resolution, 1.0),
-                'co2': generateRandomValues(500.0, 620.0, resolution, 5.0)
-            },
-            'sensor-4': {
-                'temp': generateRandomValues(20.0, 24.0, resolution, 1.0),
-                'co2': generateRandomValues(600.0, 640.0, resolution, 5.0)
             }
         }
     };

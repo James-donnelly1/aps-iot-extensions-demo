@@ -137,27 +137,70 @@ export class SensorHeatmapsExtension extends UIBaseExtension {
 
     async _setupSurfaceShading(model) {
         if (!this.dataView) {
+            console.warn('No dataView available for heatmap setup');
             return;
         }
+        
+        console.log('Setting up surface shading...');
         const shadingGroup = new Autodesk.DataVisualization.Core.SurfaceShadingGroup('iot-heatmap');
         const rooms = new Map();
+        
         for (const [sensorId, sensor] of this.dataView.getSensors().entries()) {
+            console.log(`Processing sensor: ${sensorId}`, sensor);
+            
             if (!sensor.objectId) {
+                console.warn(`Sensor ${sensorId} has no objectId`);
                 continue;
             }
+            
+            // Check if DBid exists in model
+            const tree = model.getInstanceTree();
+            if (!tree || !tree.getNodeName(sensor.objectId)) {
+                console.error(`DBid ${sensor.objectId} not found in model for sensor ${sensorId}`);
+                continue;
+            }
+            
+            console.log(`DBid ${sensor.objectId} found in model`);
+            
             if (!rooms.has(sensor.objectId)) {
-                const room = new Autodesk.DataVisualization.Core.SurfaceShadingNode(sensorId, sensor.objectId);
+                const room = new Autodesk.DataVisualization.Core.SurfaceShadingNode(sensor.name || sensorId, sensor.objectId);
                 shadingGroup.addChild(room);
                 rooms.set(sensor.objectId, room);
             }
             const room = rooms.get(sensor.objectId);
             const types = Array.from(this.dataView.getChannels().keys());
-            room.addPoint(new Autodesk.DataVisualization.Core.SurfaceShadingPoint(sensorId, sensor.location, types));
+            
+            // Create shading point without initial position
+            const shadingPoint = new Autodesk.DataVisualization.Core.SurfaceShadingPoint(sensorId, undefined, types);
+            
+            try {
+                // Auto-position the point from the model object's bounding box center
+                shadingPoint.positionFromDBId(model, sensor.objectId);
+                console.log(`Successfully positioned sensor ${sensorId} at DBid ${sensor.objectId}`);
+                room.addPoint(shadingPoint);
+            } catch (error) {
+                console.error(`Failed to position sensor ${sensorId} at DBid ${sensor.objectId}:`, error);
+                continue;
+            }
         }
+        
+        if (shadingGroup.children.length === 0) {
+            console.error('No valid sensors found for heatmap - cannot setup surface shading');
+            return;
+        }
+        
+        console.log(`Setting up surface shading with ${shadingGroup.children.length} shading nodes`);
         this._surfaceShadingData = new Autodesk.DataVisualization.Core.SurfaceShadingData();
         this._surfaceShadingData.addChild(shadingGroup);
         this._surfaceShadingData.initialize(model);
-        await this._dataVizExt.setupSurfaceShading(model, this._surfaceShadingData);
+        
+        try {
+            await this._dataVizExt.setupSurfaceShading(model, this._surfaceShadingData);
+            console.log('Surface shading setup completed successfully');
+        } catch (error) {
+            console.error('Failed to setup surface shading:', error);
+            throw error;
+        }
         // this._dataVizExt.registerSurfaceShadingColors('temp', [0x00ff00, 0xffff00, 0xff0000]);
     }
 }

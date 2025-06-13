@@ -4,16 +4,19 @@ import { SensorListExtension } from './extensions/SensorListExtension.js';
 import { SensorDetailExtension } from './extensions/SensorDetailExtension.js';
 import { SensorSpritesExtension } from './extensions/SensorSpritesExtension.js';
 import { SensorHeatmapsExtension } from './extensions/SensorHeatmapsExtension.js';
+import { PositionsExtension } from './extensions/PositionsExtension.js';
 
 export const SensorListExtensionID = 'IoT.SensorList';
 export const SensorDetailExtensionID = 'IoT.SensorDetail';
 export const SensorSpritesExtensionID = 'IoT.SensorSprites';
 export const SensorHeatmapsExtensionID = 'IoT.SensorHeatmaps';
+export const PositionsExtensionID = 'IoT.Positions';
 
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorListExtensionID, SensorListExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorDetailExtensionID, SensorDetailExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorSpritesExtensionID, SensorSpritesExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorHeatmapsExtensionID, SensorHeatmapsExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension(PositionsExtensionID, PositionsExtension);
 
 async function getAccessToken(callback) {
     try {
@@ -52,6 +55,20 @@ export function loadModel(viewer, urn, guid) {
     });
 }
 
+export function loadAdditionalModel(viewer, urn, guid) {
+    return new Promise(function (resolve, reject) {
+        function onDocumentLoadSuccess(doc) {
+            const viewable = guid ? doc.getRoot().findByGuid(guid) : doc.getRoot().getDefaultGeometry();
+            // Load with keepCurrentModels: true to maintain existing models
+            resolve(viewer.loadDocumentNode(doc, viewable, { keepCurrentModels: true }));
+        }
+        function onDocumentLoadFailure(code, message, errors) {
+            reject({ code, message, errors });
+        }
+        Autodesk.Viewing.Document.load('urn:' + urn, onDocumentLoadSuccess, onDocumentLoadFailure);
+    });
+}
+
 export function adjustPanelStyle(panel, { left, right, top, bottom, width, height }) {
     const style = panel.container.style;
     style.setProperty('left', left ? left : 'unset');
@@ -60,4 +77,19 @@ export function adjustPanelStyle(panel, { left, right, top, bottom, width, heigh
     style.setProperty('bottom', bottom ? bottom : 'unset');
     style.setProperty('width', width ? width : 'unset');
     style.setProperty('height', height ? height : 'unset');
+}
+
+export function getLoadedModels(viewer) {
+    return viewer.getAllModels();
+}
+
+export function toggleModelVisibility(viewer, modelId) {
+    const model = viewer.getModel(modelId);
+    if (model) {
+        if (!model.isHidden()) {
+            viewer.hideModel(modelId);
+        } else {
+            viewer.showModel(modelId);
+        }
+    }
 }
