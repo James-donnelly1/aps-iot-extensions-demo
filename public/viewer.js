@@ -45,12 +45,39 @@ export function initViewer(container, extensions) {
 export function loadModel(viewer, urn, guid) {
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
-            const viewable = guid ? doc.getRoot().findByGuid(guid) : doc.getRoot().getDefaultGeometry();
-            resolve(viewer.loadDocumentNode(doc, viewable));
+            try {
+                const viewable = guid ? doc.getRoot().findByGuid(guid) : doc.getRoot().getDefaultGeometry();
+                if (!viewable) {
+                    reject(new Error('No viewable found in the document'));
+                    return;
+                }
+                
+                // loadDocumentNode returns a Promise, so we need to handle it properly
+                viewer.loadDocumentNode(doc, viewable)
+                    .then(model => {
+                        if (model) {
+                            console.log('Model node loaded successfully:', model);
+                            resolve(model);
+                        } else {
+                            reject(new Error('loadDocumentNode returned null'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading document node:', error);
+                        reject(error);
+                    });
+                    
+            } catch (error) {
+                console.error('Error in onDocumentLoadSuccess:', error);
+                reject(error);
+            }
         }
         function onDocumentLoadFailure(code, message, errors) {
+            console.error('Document load failure:', { code, message, errors });
             reject({ code, message, errors });
         }
+        
+        console.log('Loading document from URN:', 'urn:' + urn);
         Autodesk.Viewing.Document.load('urn:' + urn, onDocumentLoadSuccess, onDocumentLoadFailure);
     });
 }

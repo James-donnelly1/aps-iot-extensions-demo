@@ -22,112 +22,272 @@ const EXTENSIONS = [
     // SensorListExtensionID,     // Commented out to hide sensors list
     SensorSpritesExtensionID,
     // SensorDetailExtensionID,  // Commented out to hide detail box
-    // SensorHeatmapsExtensionID, // Commented out to hide heatmaps
-    PositionsExtensionID,         // Position data dialog (static display)
-    'Autodesk.AEC.LevelsExtension'
+    // SensorHeatmapsExtensionID,
+    PositionsExtensionID
 ];
 
-const viewer = await initViewer(document.getElementById('preview'), EXTENSIONS);
-
-// Load primary model
-console.log('Loading primary model...');
-try {
-    const firstModel = await loadModel(viewer, APS_MODEL_URN, APS_MODEL_VIEW);
+// Forma-style toast notifications
+function showFormaToast(message, type = 'info', duration = 4000) {
+    const toast = document.createElement('div');
+    toast.className = `forma-toast ${type}`;
     
-    // Load second model (commented out)
-    // const [firstModel, secondModel] = await Promise.all([
-    //     loadModel(viewer, APS_MODEL_URN, APS_MODEL_VIEW),
-    //     loadAdditionalModel(viewer, APS_MODEL_URN_SECOND, APS_MODEL_VIEW_SECOND)
-    // ]);
+    const icons = {
+        success: '✓',
+        error: '⚠',
+        warning: '⚠',
+        info: 'ℹ'
+    };
     
-    console.log('Model loaded successfully:', { firstModel });
+    toast.innerHTML = `
+        <div class="forma-toast-content">
+            <div class="forma-toast-icon">${icons[type] || icons.info}</div>
+            <div class="forma-toast-message">${message}</div>
+        </div>
+    `;
     
-    // Fit to view to see the model
-    viewer.fitToView();
-} catch (error) {
-    console.error('Error loading model:', error);
+    document.body.appendChild(toast);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Auto-remove
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, duration);
 }
 
-// Make viewer globally accessible for console debugging and advanced users
-window.viewer = viewer;
+// Enhanced loading handler with Forma styling
+function updateLoadingState(isLoading, message = 'Loading...') {
+    const loadingElement = document.getElementById('viewerLoading');
+    const loadingText = loadingElement.querySelector('.forma-loading-text');
+    
+    if (isLoading) {
+        if (loadingText) {
+            loadingText.textContent = message;
+        }
+        loadingElement.classList.remove('hidden');
+        loadingElement.setAttribute('aria-hidden', 'false');
+    } else {
+        loadingElement.classList.add('hidden');
+        loadingElement.setAttribute('aria-hidden', 'true');
+    }
+}
 
-viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, async () => {
-    // Initialize the timeline with error handling
+// Enhanced error handler with Forma styling
+function handleError(error, context = 'Application') {
+    console.error(`${context} Error:`, error);
+    
+    const errorMessage = error.message || 'An unexpected error occurred';
+    showFormaToast(`${context}: ${errorMessage}`, 'error', 6000);
+    
+    updateLoadingState(false);
+}
+
+// Initialize the application with proper error handling
+async function initializeApp() {
     try {
-        await initTimeline(document.getElementById('timeline'), onTimeRangeChanged, onTimeMarkerChanged);
-        console.log('Timeline initialized successfully');
+        updateLoadingState(true, 'Checking authentication...');
+        
+        // Test authentication first
+        try {
+            const tokenResponse = await fetch('/auth/token');
+            if (!tokenResponse.ok) {
+                if (tokenResponse.status === 0 || !tokenResponse.status) {
+                    throw new Error('Cannot connect to server - please ensure the server is running on the correct port');
+                }
+                const errorText = await tokenResponse.text();
+                throw new Error(`Authentication failed: ${tokenResponse.status} ${tokenResponse.statusText} - ${errorText}`);
+            }
+            const tokenData = await tokenResponse.json();
+            console.log('Authentication successful, token expires in:', tokenData.expires_in, 'seconds');
+        } catch (authError) {
+            console.error('Authentication test failed:', authError);
+            
+            if (authError.message.includes('fetch')) {
+                showFormaToast('Server not running - please start the server first', 'error', 8000);
+                throw new Error('Server not running: Please start the server using "npm start" or "node server.js"');
+            } else {
+                showFormaToast('Authentication failed - please check server configuration', 'error', 8000);
+                throw new Error('Authentication failed: ' + authError.message);
+            }
+        }
+        
+        updateLoadingState(true, 'Initializing viewer...');
+        
+        // Initialize the viewer with enhanced error handling
+        const container = document.getElementById('preview');
+        if (!container) {
+            throw new Error('Could not find viewer container element');
+        }
+        
+        const viewer = await initViewer(container, EXTENSIONS);
+        if (!viewer) {
+            throw new Error('Failed to initialize Autodesk Viewer');
+        }
+        
+        console.log('Viewer initialized successfully:', viewer);
+        
+        updateLoadingState(true, 'Loading 3D model...');
+        
+        // Load the main model with enhanced error handling
+        let model, data;
+        try {
+            console.log('Loading model with URN:', APS_MODEL_URN);
+            console.log('Loading model with VIEW:', APS_MODEL_VIEW || 'default geometry');
+            
+            const result = await loadModel(viewer, APS_MODEL_URN, APS_MODEL_VIEW);
+            model = result;
+            
+            if (!model) {
+                throw new Error('loadModel returned null or undefined');
+            }
+            
+            console.log('Model loaded successfully:', model);
+            
+        } catch (loadError) {
+            console.error('Model loading failed:', loadError);
+            
+            // Provide more specific error messages
+            let errorMessage = 'Failed to load 3D model';
+            if (loadError.code) {
+                switch (loadError.code) {
+                    case 3:
+                        errorMessage = 'Model not found - please check the URN';
+                        break;
+                    case 4:
+                        errorMessage = 'Access token expired or invalid';
+                        break;
+                    case 5:
+                        errorMessage = 'Model translation failed';
+                        break;
+                    case 7:
+                        errorMessage = 'Model access denied - check permissions';
+                        break;
+                    default:
+                        errorMessage = `Model loading error (code ${loadError.code}): ${loadError.message}`;
+                }
+            } else if (loadError.message) {
+                errorMessage = loadError.message;
+            }
+            
+            throw new Error(errorMessage);
+        }
+        
+        updateLoadingState(true, 'Setting up data visualization...');
+        
+        // Initialize data view with sample data
+        const dataView = new MyDataView();
+        
+        // Load sensor data using the dataView's init method
+        try {
+            await dataView.init({
+                start: new Date(DEFAULT_TIMERANGE_START),
+                end: new Date(DEFAULT_TIMERANGE_END)
+            }, 32);
+            
+            console.log('Sensor data loaded successfully');
+            
+            // Set the dataView on all extensions (with null checks)
+            const spritesExt = viewer.getExtension(SensorSpritesExtensionID);
+            if (spritesExt) spritesExt.dataView = dataView;
+            
+            const listExt = viewer.getExtension(SensorListExtensionID);
+            if (listExt) listExt.dataView = dataView;
+            
+            const detailExt = viewer.getExtension(SensorDetailExtensionID);
+            if (detailExt) detailExt.dataView = dataView;
+            
+            const heatmapsExt = viewer.getExtension(SensorHeatmapsExtensionID);
+            if (heatmapsExt) heatmapsExt.dataView = dataView;
+            
+        } catch (sensorError) {
+            console.warn('Could not load sensor data:', sensorError);
+            showFormaToast('Sensor data unavailable - using demo mode', 'warning', 3000);
+        }
+        
+        updateLoadingState(true, 'Finalizing setup...');
+        
+        // Adjust panel styling for Forma theme
+        const positionsExt = viewer.getExtension(PositionsExtensionID);
+        if (positionsExt && positionsExt.panel) {
+            adjustPanelStyle(positionsExt.panel, { 
+                left: '20px', 
+                bottom: '20px', 
+                width: '420px', 
+                height: '400px' 
+            });
+        }
+        
+        // Set initial floor view if specified
+        if (APS_MODEL_DEFAULT_FLOOR_INDEX !== undefined && model && typeof model.getLayersRoot === 'function') {
+            try {
+                const layersRoot = model.getLayersRoot();
+                if (layersRoot && layersRoot.children && layersRoot.children[APS_MODEL_DEFAULT_FLOOR_INDEX]) {
+                    layersRoot.children[APS_MODEL_DEFAULT_FLOOR_INDEX].visible = true;
+                }
+            } catch (layerError) {
+                console.warn('Could not set initial floor view:', layerError);
+            }
+        }
+        
+        // Hide loading state with a slight delay for smooth transition
+        setTimeout(() => {
+            updateLoadingState(false);
+            showFormaToast('3D model loaded successfully', 'success', 3000);
+        }, 500);
+        
+        // Optional: Load additional model if configured
+        // if (APS_MODEL_URN_SECOND && APS_MODEL_VIEW_SECOND) {
+        //     try {
+        //         updateLoadingState(true, 'Loading secondary model...');
+        //         await loadAdditionalModel(viewer, APS_MODEL_URN_SECOND, APS_MODEL_VIEW_SECOND);
+        //         showFormaToast('Secondary model loaded', 'info', 2000);
+        //     } catch (secondaryError) {
+        //         console.warn('Could not load secondary model:', secondaryError);
+        //         showFormaToast('Secondary model unavailable', 'warning', 2000);
+        //     } finally {
+        //         updateLoadingState(false);
+        //     }
+        // }
+        
+        // Set up global error handlers
+        window.addEventListener('unhandledrejection', (event) => {
+            handleError(event.reason, 'Unhandled Promise');
+        });
+        
+        window.addEventListener('error', (event) => {
+            handleError(new Error(event.message), 'Runtime');
+        });
+        
+        // Log successful initialization
+        console.log('Forma-style DataViz application initialized successfully');
+        
     } catch (error) {
-        console.error('Timeline initialization failed:', error);
-        console.log('Continuing without timeline functionality...');
+        handleError(error, 'Initialization');
     }
+}
 
-    // Initialize our data view
-    const dataView = new MyDataView();
-    await dataView.init({ start: DEFAULT_TIMERANGE_START, end: DEFAULT_TIMERANGE_END });
-
-    // Configure and activate our custom IoT extensions
-    const extensions = [/* SensorListExtensionID, */ SensorSpritesExtensionID, /* SensorDetailExtensionID, */ /* SensorHeatmapsExtensionID, */ PositionsExtensionID].map(id => viewer.getExtension(id));
-    for (const ext of extensions) {
-        if (ext.dataView !== undefined) {
-            ext.dataView = dataView;
-        }
-        ext.activate();
+// Enhanced document ready handler
+function onDocumentReady(callback) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', callback);
+    } else {
+        callback();
     }
-    // adjustPanelStyle(viewer.getExtension(SensorListExtensionID).panel, { right: '10px', top: '10px', width: '500px', height: '300px' });  // Commented out
-    // adjustPanelStyle(viewer.getExtension(SensorDetailExtensionID).panel, { right: '10px', top: '320px', width: '500px', height: '300px' });  // Commented out
-    // adjustPanelStyle(viewer.getExtension(SensorHeatmapsExtensionID).panel, { left: '10px', top: '320px', width: '300px', height: '150px' });  // Commented out
-    adjustPanelStyle(viewer.getExtension(PositionsExtensionID).panel, { left: '10px', bottom: '10px', width: '420px', height: '400px' });
+}
 
-    // Configure and activate the levels extension
-    const levelsExt = viewer.getExtension('Autodesk.AEC.LevelsExtension');
-    levelsExt.levelsPanel.setVisible(true);
-    levelsExt.floorSelector.addEventListener(Autodesk.AEC.FloorSelector.SELECTED_FLOOR_CHANGED, onLevelChanged);
-    levelsExt.floorSelector.selectFloor(APS_MODEL_DEFAULT_FLOOR_INDEX, true);
-    adjustPanelStyle(levelsExt.levelsPanel, { left: '10px', top: '10px', width: '300px', height: '300px' });
-
-    // viewer.getExtension(SensorListExtensionID).onSensorClicked = (sensorId) => onCurrentSensorChanged(sensorId);  // Commented out
-    viewer.getExtension(SensorSpritesExtensionID).onSensorClicked = (sensorId) => onCurrentSensorChanged(sensorId);
-    // viewer.getExtension(SensorHeatmapsExtensionID).onChannelChanged = (channelId) => onCurrentChannelChanged(channelId);  // Commented out
-    onTimeRangeChanged(DEFAULT_TIMERANGE_START, DEFAULT_TIMERANGE_END);
-
-    async function onTimeRangeChanged(start, end) {
-        await dataView.refresh({ start, end });
-        extensions.forEach(ext => ext.dataView = dataView);
-    }
-
-    function onLevelChanged({ target, levelIndex }) {
-        dataView.floor = levelIndex !== undefined ? target.floorData[levelIndex] : null;
-        extensions.forEach(ext => ext.dataView = dataView);
-    }
-
-    function onTimeMarkerChanged(time) {
-        extensions.forEach(ext => ext.currentTime = time);
-    }
-
-    function onCurrentSensorChanged(sensorId) {
-        const sensor = dataView.getSensors().get(sensorId);
-        if (sensor && sensor.objectId) {
-            viewer.fitToView([sensor.objectId]);
-        }
-        extensions.forEach(ext => ext.currentSensorID = sensorId);
-    }
-
-    function onCurrentChannelChanged(channelId) {
-        extensions.forEach(ext => ext.currentChannelID = channelId);
-    }
+// Start the application
+onDocumentReady(() => {
+    console.log('Starting Forma-style DataViz Extensions Demo...');
+    initializeApp();
 });
 
-window.getBoundingBox = function (model, dbid) {
-    const tree = model.getInstanceTree();
-    const frags = model.getFragmentList();
-    const bounds = new THREE.Box3();
-    const result = new THREE.Box3();
-    tree.enumNodeFragments(dbid, function (fragid) {
-        frags.getWorldBounds(fragid, bounds);
-        result.union(bounds);
-    }, true);
-    return result;
-};
-
-// The primary model is loaded automatically on startup.
-// The viewer is accessible via window.viewer for console debugging if needed.
+// Export for debugging (remove in production)
+window.showFormaToast = showFormaToast;

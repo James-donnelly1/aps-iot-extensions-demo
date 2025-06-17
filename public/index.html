@@ -5,29 +5,54 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="INTC Digital Twin - Interactive 3D data visualization with IoT sensor data">
+    <meta name="theme-color" content="#0696D7">
 
     <link rel="icon" type="image/x-icon" href="https://cdn.autodesk.io/favicon.ico">
     <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.css">
     <link rel="stylesheet" href="/global.css">
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <title>Autodesk Platform Services: DataViz Extensions Demo</title> 	
+    <title>INTC Digital Twin</title>
 </head>
 
 <body>
-    <div id="header">
-        <img class="logo" src="https://cdn.autodesk.io/logo/white/stacked.png" alt="Autodesk Platform Services">
-        <span class="title">DataViz Extensions Demo</span>
-		<a href="https://github.com/autodesk-platform-services/aps-iot-extensions-demo" target="_blank" style="margin-left: auto;">
-			<img src="/github-mark-white.png" style="height: 2em;" alt="GitHub logo">
-		</a>
-    </div>
+    <header id="header" role="banner">
+        <img class="logo" 
+             src="https://cdn.autodesk.io/logo/black/stacked.png" 
+             alt="Autodesk Platform Services" 
+             loading="eager">
+        <h1 class="title">INTC Digital Twin</h1>
+        <nav aria-label="External links">
+            <a href="https://github.com/autodesk-platform-services/aps-iot-extensions-demo" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               class="forma-btn forma-btn-secondary"
+               aria-label="View source code on GitHub">
+                <img src="/github-mark-white.png" 
+                     alt="GitHub logo" 
+                     loading="lazy">
+                <span>Source Code</span>
+            </a>
+        </nav>
+    </header>
 
-    <div id="preview"></div>
-    <div id="timeline"></div>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.2.2/browser/pixi.js"></script>
-	<script src="https://unpkg.com/chronos-etu@7.0.0/dist/chronos-etu.js"></script>
-	<script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
+    <main id="preview" role="main" aria-label="3D Model Viewer">
+        <div class="forma-loading" id="viewerLoading" aria-hidden="true">
+            <div class="forma-loading-content">
+                <div class="forma-loading-spinner"></div>
+                <p class="forma-loading-text">Loading 3D model...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts ordered by dependency -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.2.2/browser/pixi.js"></script>
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
     <script src="/debug-dbids.js"></script>
     <script type="module" src="/index.js"></script>
 </body>
