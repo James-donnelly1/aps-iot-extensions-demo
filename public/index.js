@@ -4,7 +4,8 @@ import {
     SensorSpritesExtensionID,
     SensorDetailExtensionID,
     SensorHeatmapsExtensionID,
-    PositionsExtensionID
+    PositionsExtensionID,
+    FloorPlan2DExtensionID
 } from './viewer.js';
 import { initTimeline } from './timeline.js';
 import { MyDataView } from './dataview.js';
@@ -15,7 +16,8 @@ import {
     // APS_MODEL_VIEW_SECOND,
     APS_MODEL_DEFAULT_FLOOR_INDEX,
     DEFAULT_TIMERANGE_START,
-    DEFAULT_TIMERANGE_END
+    DEFAULT_TIMERANGE_END,
+    FLOOR_PLAN_CONFIG
 } from './config.js';
 
 const EXTENSIONS = [
@@ -23,7 +25,8 @@ const EXTENSIONS = [
     SensorSpritesExtensionID,
     // SensorDetailExtensionID,  // Commented out to hide detail box
     // SensorHeatmapsExtensionID,
-    PositionsExtensionID
+    PositionsExtensionID,
+    FloorPlan2DExtensionID      // New 2D floor plan extension
 ];
 
 // Forma-style toast notifications
@@ -206,6 +209,18 @@ async function initializeApp() {
             
             const heatmapsExt = viewer.getExtension(SensorHeatmapsExtensionID);
             if (heatmapsExt) heatmapsExt.dataView = dataView;
+            
+            // Configure the FloorPlan2D extension
+            const floorPlan2DExt = viewer.getExtension(FloorPlan2DExtensionID);
+            if (floorPlan2DExt) {
+                floorPlan2DExt.dataView = dataView;
+                // Set the floor plan configuration
+                floorPlan2DExt._config = {
+                    imagePath: FLOOR_PLAN_CONFIG.imagePath,
+                    coordinateMapping: FLOOR_PLAN_CONFIG.coordinateMapping
+                };
+                console.log('FloorPlan2D extension configured with:', floorPlan2DExt._config);
+            }
             
         } catch (sensorError) {
             console.warn('Could not load sensor data:', sensorError);
