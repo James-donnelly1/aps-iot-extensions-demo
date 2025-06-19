@@ -1,35 +1,8 @@
-const SENSORS = {
-    'sensor-1': {
-        name: 'Josh',
-        description: 'RTLS sensor.',
-        groupName: 'Level 1',
-        location: {
-            x: 0,
-            y: 0,
-            z: 0
-        },
-        objectId: 1  // Root node - should always exist
-    }
-};
+const CONFIG = require('../config.js');
 
-const CHANNELS = {
-    'temp': {
-        name: 'Temperature',
-        description: 'External temperature in degrees Celsius.',
-        type: 'double',
-        unit: '°C',
-        min: 18.0,
-        max: 28.0
-    },
-    'co2': {
-        name: 'CO₂',
-        description: 'Level of carbon dioxide.',
-        type: 'double',
-        unit: 'ppm',
-        min: 482.81,
-        max: 640.00
-    }
-};
+// Use configuration from centralized config
+const SENSORS = CONFIG.iot.sensors;
+const CHANNELS = CONFIG.iot.channels;
 
 async function getSensors() {
     return SENSORS;
@@ -39,14 +12,17 @@ async function getChannels() {
     return CHANNELS;
 }
 
-async function getSamples(timerange, resolution = 32) {
+async function getSamples(timerange, resolution = CONFIG.iot.dataGeneration.defaultResolution) {
+    const tempRange = CONFIG.iot.dataGeneration.temperatureRange;
+    const co2Range = CONFIG.iot.dataGeneration.co2Range;
+    
     return {
         count: resolution,
         timestamps: generateTimestamps(timerange.start, timerange.end, resolution),
         data: {
             'sensor-1': {
-                'temp': generateRandomValues(18.0, 28.0, resolution, 1.0),
-                'co2': generateRandomValues(540.0, 600.0, resolution, 5.0)
+                'temp': generateRandomValues(tempRange.min, tempRange.max, resolution, tempRange.delta),
+                'co2': generateRandomValues(co2Range.min, co2Range.max, resolution, co2Range.delta)
             }
         }
     };

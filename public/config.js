@@ -1,10 +1,41 @@
-export const APS_MODEL_URN = 'dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLlVuSzBqTmRMU3JhZlRfakdPR1Fnb1E_dmVyc2lvbj0xMA';
-export const APS_MODEL_VIEW = ''; //'37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202'; // open model in ACC and debug console to find viewableGUID
-export const APS_MODEL_DEFAULT_FLOOR_INDEX = 0;
+// Client-side Configuration
+// This file mirrors the server-side config.js structure for browser use
 
-// Second model configuration
-// export const APS_MODEL_URN_SECOND = 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6amFtZXMtYnVja2V0LXRlc3QvQm9zdG9uJTIwTW9ja3VwJTIwV2FsbCUyMDIuMF9BcmNoX1IyNS5ydnQ';
-// export const APS_MODEL_VIEW_SECOND = '';
+// Import the server config (this will be replaced by build process or server-side rendering)
+// For now, we'll duplicate the configuration here for client-side access
 
-export const DEFAULT_TIMERANGE_START = new Date('2022-01-01');
-export const DEFAULT_TIMERANGE_END = new Date('2022-01-30');
+// Dynamic Configuration Loader
+// Fetches configuration from server - NO hardcoded values!
+
+let CONFIG = null;
+
+// Load configuration from server
+async function loadConfig() {
+    if (CONFIG) {
+        return CONFIG; // Return cached config
+    }
+    
+    try {
+        const response = await fetch('/api/config');
+        if (!response.ok) {
+            throw new Error(`Failed to load configuration: ${response.status} ${response.statusText}`);
+        }
+        CONFIG = await response.json();
+        console.log('✅ Configuration loaded from server');
+        return CONFIG;
+    } catch (error) {
+        console.error('❌ Failed to load configuration from server:', error);
+        throw new Error(`Configuration unavailable: ${error.message}. Please ensure the server is running and accessible at the correct URL.`);
+    }
+}
+
+// Export the config loader and CONFIG
+export { loadConfig, CONFIG };
+
+// Simple getter functions (only work after loadConfig() succeeds)
+export const getConfig = () => CONFIG;
+export const getApsModelUrn = () => CONFIG?.aps?.model?.urn;
+export const getApsModelView = () => CONFIG?.aps?.model?.view;
+export const getDefaultTimeRange = () => CONFIG?.dataVisualization?.defaultTimeRange;
+
+// Legacy exports for backward compatibility (removed - use CONFIG object directly)

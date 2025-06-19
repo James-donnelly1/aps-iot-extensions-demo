@@ -1,53 +1,266 @@
-# APS DataViz Extensions Demo
+# APS IoT Extensions Demo
 
-![platforms](https://img.shields.io/badge/platform-windows%20%7C%20osx%20%7C%20linux-lightgray.svg)
-[![node.js](https://img.shields.io/badge/Node.js-16.17-blue.svg)](https://nodejs.org)
-[![npm](https://img.shields.io/badge/npm-8.15-blue.svg)](https://www.npmjs.com/)
-[![license](https://img.shields.io/:license-mit-green.svg)](https://opensource.org/licenses/MIT)
+This sample demonstrates how to use [Autodesk Platform Services](https://aps.autodesk.com) to visualize IoT sensor data in a 3D model using the Forge Viewer.
 
-Sample [Autodesk Platform Services](https://aps.autodesk.com) application, built using the [Data Visualization Extension](https://aps.autodesk.com/en/docs/dataviz/v1/developers_guide/overview/).
+## 🚀 Features
 
-See the [Data Visualization Extension](https://aps.autodesk.com/en/docs/dataviz/v1/developers_guide/overview/) homepage for more details.
+- **3D Model Visualization**: Load and display Autodesk models in the browser
+- **IoT Data Integration**: Visualize sensor data with sprites and trails
+- **Real-time Animation**: Animated sprite movements with configurable trails
+- **Calibration System**: Configurable scale factors for accurate positioning
+- **Centralized Configuration**: Single configuration file for all settings
 
-Live demo: https://aps-iot-extensions-demo.autodesk.io
+## ⚙️ Single Configuration System
 
-![thumbnail](./thumbnail.png)
+This project uses a **single configuration system** with one source of truth in `config.js`. The server serves configuration to the client dynamically, eliminating duplication:
 
-## Setup
+### 📁 Configuration Architecture
+
+**Single Source of Truth**: Only `config.js` (root level) contains configuration:
+- **Server**: Uses `config.js` directly
+- **Client**: Fetches config from `/api/config` endpoint
+- **No Duplication**: Eliminates sync issues between files
+
+#### 🏢 APS (Autodesk Platform Services) Settings
+```javascript
+aps: {
+    clientId: APS_CLIENT_ID,
+    clientSecret: APS_CLIENT_SECRET,
+    model: {
+        urn: 'your-model-urn',
+        view: 'optional-view-guid',
+        defaultFloorIndex: 0
+    }
+}
+```
+
+#### 🎯 Calibration Settings
+```javascript
+calibration: {
+    viewerDistance: 1.52,
+    buildingDistance: 252,
+    scaleFactor: 1.52 / 252,
+    isCalibrated: true
+}
+```
+
+#### 🎨 Sprite Configuration
+```javascript
+sprites: {
+    configurations: [
+        {
+            id: 'sprite1',
+            positionFile: '/position-data.txt',
+            startOffset: { x: 0, y: 0, z: 0 },
+            color: { r: 1.0, g: 0.0, b: 0.0 },
+            trailColor: { r: 1.0, g: 0.5, b: 0.5 }
+        }
+    ],
+    trailEnabled: true
+}
+```
+
+#### 🌡️ IoT Sensor Definitions
+```javascript
+iot: {
+    sensors: { /* sensor configurations */ },
+    channels: { /* channel definitions */ },
+    dataGeneration: { /* mock data settings */ }
+}
+```
+
+#### 🎛️ UI & Extension Settings
+```javascript
+ui: {
+    notifications: { /* toast settings */ },
+    loadingMessages: { /* loading text */ }
+},
+extensions: {
+    enabled: ['SensorSpritesExtension', 'PositionsExtension'],
+    available: ['SensorListExtension', 'SensorDetailExtension']
+}
+```
+
+### 🔧 How to Customize
+
+1. **Model Settings**: Update `CONFIG.aps.model.urn` with your model URN
+2. **Calibration**: Adjust `CONFIG.calibration` scale factors for your model
+3. **Sprites**: Modify `CONFIG.sprites.configurations` to add/remove sprites
+4. **Colors**: Change sprite and trail colors in the sprite configurations
+5. **Sensors**: Update `CONFIG.iot.sensors` and `CONFIG.iot.channels`
+6. **Extensions**: Enable/disable extensions in `CONFIG.extensions`
+
+## 🛠️ Setup
 
 ### Prerequisites
+- [Node.js](https://nodejs.org) (version 18 or higher)
+- [APS App](https://aps.autodesk.com/myapps) with Client ID and Secret
 
-- [APS credentials](https://forge.autodesk.com/en/docs/oauth/v2/tutorials/create-app)
-- [Node.js](https://nodejs.org)
-- [Yarn package manager](https://yarnpkg.com)
-- Terminal (for example, [Windows Command Prompt](https://en.wikipedia.org/wiki/Cmd.exe) or [macOS Terminal](https://support.apple.com/guide/terminal/welcome/mac))
+### Installation
 
-### Running locally
+1. Clone this repository:
+```bash
+git clone <repository-url>
+cd aps-INTC-data-visualization
+```
 
-- Clone this repository
-- Install dependencies: `yarn install`
-- Setup environment variables:
-    - `APS_CLIENT_ID` - client ID of your APS application
-    - `APS_CLIENT_SECRET` - client secret of your APS application
-- In [public/config.js](./public/config.js), modify `APS_MODEL_URN` and `APS_MODEL_VIEW` with your own model URN and view GUID
-- In [./services/iot.mocked.js](./services/iot.mocked.js)
-    - Modify the mocked up sensors,
-for example, changing their `location` (XYZ position in the model's coordinate system)
-or `objectId` (the dbID of the room the sensor should be associated with)
+2. Install dependencies:
+```bash
+npm install
+```
 
-        > Note: the locations and object IDs in the mocked up data is setup specifically for the _rac\_basic\_sample\_project.rvt_ sample project from [Revit Sample Project Files](https://knowledge.autodesk.com/support/revit/getting-started/caas/CloudHelp/cloudhelp/2022/ENU/Revit-GetStarted/files/GUID-61EF2F22-3A1F-4317-B925-1E85F138BE88-htm.html).
+3. Create environment file:
+```bash
+cp env.template .env
+```
 
-    - Adjust the resolution and ranges of the randomly generated sensor data
-- Run the app: `yarn start`
-- Go to http://localhost:3000
+4. Edit `.env` file with your APS credentials:
+```
+APS_CLIENT_ID=your_client_id_here
+APS_CLIENT_SECRET=your_client_secret_here
+PORT=3000
+```
 
-> When using [Visual Studio Code](https://code.visualstudio.com), you can specify the env. variables listed above in a _.env_ file in this folder, and run & debug the application directly from the editor.
+5. Customize configuration in `config.js`:
+   - Update model URN
+   - Adjust calibration settings
+   - Configure sprites and colors
+   - Modify sensor definitions
 
-## Tips & Tricks
+6. Start the server:
+```bash
+npm start
+```
 
-In case you're not seeing the heatmaps or room information, please refer to this blog: [Rooms information in Revit File](https://aps.autodesk.com/blog/no-room-information-revit-file-when-working-dataviz-extension-viewer)
+7. Open http://localhost:3000 in your browser
 
-## License
+## 📋 Configuration Reference
 
-This sample is licensed under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-Please see the [LICENSE](LICENSE) file for more details.
+### Environment Variables (.env)
+- `APS_CLIENT_ID`: Your Autodesk Platform Services Client ID
+- `APS_CLIENT_SECRET`: Your Autodesk Platform Services Client Secret  
+- `PORT`: Server port (default: 3000)
+
+### Main Configuration (config.js)
+All other settings are centralized in `config.js`:
+
+| Section | Description |
+|---------|-------------|
+| `server` | Server configuration (port, static path) |
+| `aps` | APS credentials and model settings |
+| `dataVisualization` | Performance and visual settings |
+| `calibration` | Single calibration scale settings |
+| `sprites` | Sprite definitions and colors |
+| `iot` | Sensor and channel definitions |
+| `extensions` | Extension enable/disable settings |
+| `ui` | User interface configurations |
+
+## 🎨 Customization Examples
+
+### Adding a New Sprite
+```javascript
+// In config.js, add to sprites.configurations:
+{
+    id: 'sprite3',
+    positionFile: '/position-data-3.txt',
+    startOffset: { x: 30, y: 0, z: 0 },
+    color: { r: 0.0, g: 0.0, b: 1.0 },
+    trailColor: { r: 0.5, g: 0.5, b: 1.0 }
+}
+```
+
+### Adjusting Calibration
+```javascript
+// In config.js, update calibration settings:
+calibration: {
+    viewerDistance: 2.0,        // Distance measured in viewer (inches)
+    buildingDistance: 400,      // Equivalent distance in building (inches)
+    scaleFactor: 2.0 / 400,     // Automatically calculated scale factor
+    isCalibrated: true
+}
+```
+
+### Changing Model
+```javascript
+// In config.js, update aps.model:
+model: {
+    urn: 'your-new-model-urn',
+    view: 'optional-view-guid',
+    defaultFloorIndex: 0
+}
+```
+
+## 🏗️ Architecture
+
+- **Frontend**: Vanilla JavaScript with Autodesk Viewer
+- **Backend**: Node.js with Express
+- **Configuration**: Centralized in `config.js`
+- **Extensions**: Modular extension system
+- **Data**: Mock IoT data generation
+
+## 📁 File Structure
+
+```
+├── config.js                 # ✨ SINGLE CONFIGURATION SOURCE
+├── public/
+│   ├── config.js             # Dynamic config loader
+│   ├── extensions/           # Viewer extensions
+│   │   ├── SensorSpritesExtension.js
+│   │   └── ...
+│   └── ...
+├── services/
+│   ├── aps.js               # APS authentication
+│   └── iot.mocked.js        # Mock IoT data
+├── server.js                # Express server (serves /api/config)
+└── .env                     # Environment variables
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Authentication Errors**: Check your APS Client ID and Secret in `.env`
+2. **Model Loading Issues**: Verify the model URN in `config.js`
+3. **Sprite Colors**: Ensure RGB values are between 0.0 and 1.0
+4. **Calibration**: Adjust calibration settings for your specific model scale
+
+### Debug Tools
+
+- Open browser dev tools and check console for errors
+- Use the calibration dialog to test different scale factors
+- Verify model URN using Autodesk's model derivative API
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Update configuration documentation if needed
+4. Test your changes
+5. Submit a pull request
+
+## 📚 Resources
+
+- [Autodesk Platform Services Documentation](https://aps.autodesk.com/en/docs/)
+- [Forge Viewer API Reference](https://aps.autodesk.com/en/docs/viewer/v7/reference/)
+- [Data Visualization Extension](https://aps.autodesk.com/en/docs/viewer/v7/developers_guide/advanced_options/data-visualization/)
+
+---
+
+## 🔧 **Why Only One Config File?**
+
+**Previous Problem**: Originally had 2 config files that could get out of sync:
+- `config.js` (server-side) 
+- `public/config.js` (client-side duplicate)
+
+**Solution**: Pure dynamic configuration loading:
+1. **Single Source**: Only `config.js` contains configuration
+2. **Server Endpoint**: `/api/config` serves config to client
+3. **Security**: Server filters out secrets (credentials, etc.)
+4. **No Hardcoded Values**: Client config has ZERO hardcoded fallbacks
+5. **No Duplication**: Impossible for configs to get out of sync
+
+🎯 **Key Benefit**: With the single configuration system, you edit only `config.js` and both server and client automatically use the same settings!

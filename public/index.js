@@ -9,15 +9,7 @@ import {
 } from './viewer.js';
 import { initTimeline } from './timeline.js';
 import { MyDataView } from './dataview.js';
-import {
-    APS_MODEL_URN,
-    APS_MODEL_VIEW,
-    // APS_MODEL_URN_SECOND,
-    // APS_MODEL_VIEW_SECOND,
-    APS_MODEL_DEFAULT_FLOOR_INDEX,
-    DEFAULT_TIMERANGE_START,
-    DEFAULT_TIMERANGE_END
-} from './config.js';
+import { loadConfig } from './config.js';
 
 const EXTENSIONS = [
     // SensorListExtensionID,     // Commented out to hide sensors list
@@ -28,7 +20,7 @@ const EXTENSIONS = [
     DatumMarkerExtensionID
 ];
 
-// Forma-style toast notifications
+// Forma-style toast notifications (can be called before config loads)
 function showFormaToast(message, type = 'info', duration = 4000) {
     const toast = document.createElement('div');
     toast.className = `forma-toast ${type}`;
@@ -87,7 +79,8 @@ function handleError(error, context = 'Application') {
     console.error(`${context} Error:`, error);
     
     const errorMessage = error.message || 'An unexpected error occurred';
-    showFormaToast(`${context}: ${errorMessage}`, 'error', 6000);
+    const errorDuration = window.CONFIG?.ui?.notifications?.errorDuration || 6000;
+    showFormaToast(`${context}: ${errorMessage}`, 'error', errorDuration);
     
     updateLoadingState(false);
 }
@@ -95,7 +88,18 @@ function handleError(error, context = 'Application') {
 // Initialize the application with proper error handling
 async function initializeApp() {
     try {
-        updateLoadingState(true, 'Checking authentication...');
+        // Load configuration first
+        const CONFIG = await loadConfig();
+        
+        // Make CONFIG globally available
+        window.CONFIG = CONFIG;
+        
+        updateLoadingState(true, CONFIG.ui.loadingMessages.auth);
+        
+        // Update toast function to use config values now that config is loaded
+        window.showFormaToast = (message, type = 'info', duration = CONFIG.ui.notifications.defaultDuration || 4000) => {
+            return showFormaToast(message, type, duration);
+        };
         
         // Test authentication first
         try {
@@ -113,15 +117,15 @@ async function initializeApp() {
             console.error('Authentication test failed:', authError);
             
             if (authError.message.includes('fetch')) {
-                showFormaToast('Server not running - please start the server first', 'error', 8000);
+                showFormaToast('Server not running - please start the server first', 'error', CONFIG.ui.notifications.errorDuration || 8000);
                 throw new Error('Server not running: Please start the server using "npm start" or "node server.js"');
             } else {
-                showFormaToast('Authentication failed - please check server configuration', 'error', 8000);
+                showFormaToast('Authentication failed - please check server configuration', 'error', CONFIG.ui.notifications.errorDuration || 8000);
                 throw new Error('Authentication failed: ' + authError.message);
             }
         }
         
-        updateLoadingState(true, 'Initializing viewer...');
+        updateLoadingState(true, CONFIG.ui.loadingMessages.viewer);
         
         // Initialize the viewer with enhanced error handling
         const container = document.getElementById('preview');
@@ -139,15 +143,15 @@ async function initializeApp() {
         // Make viewer globally accessible for debugging
         window.viewer = viewer;
         
-        updateLoadingState(true, 'Loading 3D model...');
+        updateLoadingState(true, CONFIG.ui.loadingMessages.model);
         
         // Load the main model with enhanced error handling
         let model, data;
         try {
-            console.log('Loading model with URN:', APS_MODEL_URN);
-            console.log('Loading model with VIEW:', APS_MODEL_VIEW || 'default geometry');
+            console.log('Loading model with URN:', CONFIG.aps.model.urn);
+            console.log('Loading model with VIEW:', CONFIG.aps.model.view || 'default geometry');
             
-            const result = await loadModel(viewer, APS_MODEL_URN, APS_MODEL_VIEW);
+            const result = await loadModel(viewer, CONFIG.aps.model.urn, CONFIG.aps.model.view);
             model = result;
             
             if (!model) {
@@ -188,7 +192,7 @@ async function initializeApp() {
             throw new Error(errorMessage);
         }
         
-        updateLoadingState(true, 'Setting up data visualization...');
+        updateLoadingState(true, CONFIG.ui.loadingMessages.data);
         
         // Initialize data view with sample data
         const dataView = new MyDataView();
@@ -196,8 +200,8 @@ async function initializeApp() {
         // Load sensor data using the dataView's init method
         try {
             await dataView.init({
-                start: new Date(DEFAULT_TIMERANGE_START),
-                end: new Date(DEFAULT_TIMERANGE_END)
+                start: new Date(CONFIG.dataVisualization.defaultTimeRange.start),
+                end: new Date(CONFIG.dataVisualization.defaultTimeRange.end)
             }, 32);
             
             console.log('Sensor data loaded successfully');
@@ -217,7 +221,7 @@ async function initializeApp() {
             
         } catch (sensorError) {
             console.warn('Could not load sensor data:', sensorError);
-            showFormaToast('Sensor data unavailable - using demo mode', 'warning', 3000);
+            showFormaToast('Sensor data unavailable - using demo mode', 'warning', CONFIG.ui.notifications.warningDuration || 3000);
         }
         
         updateLoadingState(true, 'Finalizing setup...');
@@ -234,11 +238,11 @@ async function initializeApp() {
         }
         
         // Set initial floor view if specified
-        if (APS_MODEL_DEFAULT_FLOOR_INDEX !== undefined && model && typeof model.getLayersRoot === 'function') {
+        if (CONFIG.aps.model.defaultFloorIndex !== undefined && model && typeof model.getLayersRoot === 'function') {
             try {
                 const layersRoot = model.getLayersRoot();
-                if (layersRoot && layersRoot.children && layersRoot.children[APS_MODEL_DEFAULT_FLOOR_INDEX]) {
-                    layersRoot.children[APS_MODEL_DEFAULT_FLOOR_INDEX].visible = true;
+                if (layersRoot && layersRoot.children && layersRoot.children[CONFIG.aps.model.defaultFloorIndex]) {
+                    layersRoot.children[CONFIG.aps.model.defaultFloorIndex].visible = true;
                 }
             } catch (layerError) {
                 console.warn('Could not set initial floor view:', layerError);
@@ -248,7 +252,7 @@ async function initializeApp() {
         // Hide loading state with a slight delay for smooth transition
         setTimeout(() => {
             updateLoadingState(false);
-            showFormaToast('3D model loaded successfully', 'success', 3000);
+            showFormaToast('3D model loaded successfully', 'success', CONFIG.ui.notifications.successDuration || 3000);
         }, 500);
         
         // Optional: Load additional model if configured
@@ -278,7 +282,14 @@ async function initializeApp() {
         console.log('Forma-style DataViz application initialized successfully');
         
     } catch (error) {
-        handleError(error, 'Initialization');
+        // Make sure CONFIG is available for error handler
+        if (!window.CONFIG) {
+            console.error('Initialization failed before config could be loaded:', error);
+            showFormaToast('Failed to start application: ' + (error.message || 'Unknown error'), 'error', 8000);
+            updateLoadingState(false);
+        } else {
+            handleError(error, 'Initialization');
+        }
     }
 }
 
