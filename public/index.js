@@ -4,7 +4,8 @@ import {
     SensorSpritesExtensionID,
     SensorDetailExtensionID,
     SensorHeatmapsExtensionID,
-    PositionsExtensionID
+    PositionsExtensionID,
+    DatumMarkerExtensionID
 } from './viewer.js';
 import { initTimeline } from './timeline.js';
 import { MyDataView } from './dataview.js';
@@ -23,7 +24,8 @@ const EXTENSIONS = [
     SensorSpritesExtensionID,
     // SensorDetailExtensionID,  // Commented out to hide detail box
     // SensorHeatmapsExtensionID,
-    PositionsExtensionID
+    PositionsExtensionID,
+    DatumMarkerExtensionID
 ];
 
 // Forma-style toast notifications
@@ -134,6 +136,9 @@ async function initializeApp() {
         
         console.log('Viewer initialized successfully:', viewer);
         
+        // Make viewer globally accessible for debugging
+        window.viewer = viewer;
+        
         updateLoadingState(true, 'Loading 3D model...');
         
         // Load the main model with enhanced error handling
@@ -150,6 +155,9 @@ async function initializeApp() {
             }
             
             console.log('Model loaded successfully:', model);
+            
+            // Make model globally accessible for debugging
+            window.model = model;
             
         } catch (loadError) {
             console.error('Model loading failed:', loadError);

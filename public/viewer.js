@@ -5,18 +5,21 @@ import { SensorDetailExtension } from './extensions/SensorDetailExtension.js';
 import { SensorSpritesExtension } from './extensions/SensorSpritesExtension.js';
 import { SensorHeatmapsExtension } from './extensions/SensorHeatmapsExtension.js';
 import { PositionsExtension } from './extensions/PositionsExtension.js';
+import { DatumMarkerExtension } from './extensions/DatumMarkerExtension.js';
 
 export const SensorListExtensionID = 'IoT.SensorList';
 export const SensorDetailExtensionID = 'IoT.SensorDetail';
 export const SensorSpritesExtensionID = 'IoT.SensorSprites';
 export const SensorHeatmapsExtensionID = 'IoT.SensorHeatmaps';
 export const PositionsExtensionID = 'IoT.Positions';
+export const DatumMarkerExtensionID = 'IoT.DatumMarker';
 
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorListExtensionID, SensorListExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorDetailExtensionID, SensorDetailExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorSpritesExtensionID, SensorSpritesExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(SensorHeatmapsExtensionID, SensorHeatmapsExtension);
 Autodesk.Viewing.theExtensionManager.registerExtension(PositionsExtensionID, PositionsExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension(DatumMarkerExtensionID, DatumMarkerExtension);
 
 async function getAccessToken(callback) {
     try {
