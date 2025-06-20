@@ -23,7 +23,7 @@ const CONFIG = {
         // Model Configuration
         model: {
             urn: 'dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLlVuSzBqTmRMU3JhZlRfakdPR1Fnb1E_dmVyc2lvbj0xMA',
-            view: '', // '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202'
+            view: '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202', // '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202'
             defaultFloorIndex: 0
         },
         // Secondary model (if needed)
@@ -43,16 +43,16 @@ const CONFIG = {
         },
         
         // Update intervals and performance settings
-        updateInterval: 500, // milliseconds
+        updateInterval: 500, // milliseconds (lower = faster sprite movement)
         maxTrailLength: 1000,
-        spriteSize: 32
+        spriteSize: 12
     },
 
     // Calibration System Configuration (Single calibration only)
     calibration: {
-        viewerDistance: 1.52,
+        viewerDistance: 0.978,
         buildingDistance: 252,
-        scaleFactor: 1.52 / 252,
+        scaleFactor: 0.978 / 252, // viewerDistance / buildingDistance
         isCalibrated: true
     },
 
@@ -62,16 +62,16 @@ const CONFIG = {
             {
                 id: 'sprite1',
                 positionFile: '/position-data.txt',
-                startOffset: { x: 0, y: 0, z: 0 },
-                color: { r: 1.0, g: 0.0, b: 0.0 },
-                trailColor: { r: 1.0, g: 0.5, b: 0.5 }
+                startOffset: { x: 5.23, y: 3.76, z: 0 },
+                //color: { r: 0.5, g: 0.5, b: 0.5}, // Autodesk Yellow (#FFCC00)
+                //trailColor: { r: 0.5, g: 0.5, b: 0.5 } // Lighter yellow trail
             },
             {
                 id: 'sprite2',
                 positionFile: '/position-data-2.txt',
-                startOffset: { x: 15, y: 0, z: 0 },
-                color: { r: 0.0, g: 1.0, b: 0.0 },
-                trailColor: { r: 0.5, g: 1.0, b: 0.5 }
+                startOffset: { x: 5.23, y: 3.76, z: 0 },
+                //color: { r: 1.0, g: 1.0, b: 1.0 }, // White
+                //trailColor: { r: 1.0, g: 1.0, b: 1.0 } // Dark gray trail
             }
         ],
         trailEnabled: true

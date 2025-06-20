@@ -116,7 +116,7 @@ export class SensorSpritesExtension extends UIBaseExtension {
         }
         
         const viewableData = new Autodesk.DataVisualization.Core.ViewableData();
-        viewableData.spriteSize = 32; // Use default or load from config in load()
+        viewableData.spriteSize = 12; // Use default or load from config in load()
         this._dbIdToSensorId.clear();
         let dbid = 1000000;
         
@@ -294,38 +294,50 @@ export class SensorSpritesExtension extends UIBaseExtension {
         const DataVizCore = Autodesk.DataVisualization.Core;
         const viewableType = DataVizCore.ViewableType.SPRITE;
         
-        // Use colors from sprite configuration
-        const spriteConfig = this._sprites[index];
-        const color = spriteConfig?.config?.color || { r: 1.0, g: 1.0, b: 1.0 };
-        
-        const icons = [
-            'https://img.icons8.com/emoji/48/man-construction-worker.png',
-            'https://img.icons8.com/emoji/48/woman-construction-worker.png'
-        ];
-        
-        const spriteColor = new THREE.Color(color.r, color.g, color.b);
+        // Using Autodesk pantone colors
+        // copy the chosen color to the trailIcons
+        // Dawn and Morning
+//        const icons = [
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=f09d4f',
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=2ad0a9'
+//        ];
+
+        // Dusk and Twilight
+//       const icons = [
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=f2520a',
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=1d91d0'
+//        ];
+
+        // Hello Yellow and Autodesk Black
+          const icons = [
+           'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=ffff00',
+           'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=000000'
+           ];
+
+//       const icons = [
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=f09d4f',
+//            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=2ad0a9'
+//        ];
+
         const spriteIconUrl = icons[index] || icons[0];
         
-        return new DataVizCore.ViewableStyle(viewableType, spriteColor, spriteIconUrl);
+        // Use white color to let the icon's embedded color show through
+        return new DataVizCore.ViewableStyle(viewableType, new THREE.Color(1, 1, 1), spriteIconUrl);
     }
 
     _createTrailStyle(index) {
         const DataVizCore = Autodesk.DataVisualization.Core;
         const viewableType = DataVizCore.ViewableType.SPRITE;
         
-        // Use trail colors from sprite configuration
-        const spriteConfig = this._sprites[index];
-        const trailColor = spriteConfig?.config?.trailColor || { r: 1.0, g: 0.4, b: 0.2 };
-        
         const trailIcons = [
-            'https://img.icons8.com/ios-filled/50/357aff/record.png',
-            'https://img.icons8.com/ios-filled/50/35ff6b/record.png'
+            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=ffff00',
+            'https://img.icons8.com/?size=100&id=Fra0jAwRETVA&format=png&color=000000'
         ];
         
-        const trailColorObj = new THREE.Color(trailColor.r, trailColor.g, trailColor.b);
         const trailIconUrl = trailIcons[index] || trailIcons[0];
         
-        return new DataVizCore.ViewableStyle(viewableType, trailColorObj, trailIconUrl);
+        // Use white color to let the icon's embedded color show through
+        return new DataVizCore.ViewableStyle(viewableType, new THREE.Color(1, 1, 1), trailIconUrl);
     }
 
 
@@ -457,7 +469,7 @@ export class SensorSpritesExtension extends UIBaseExtension {
         if (this._trailEnabled) {
             this._trailButton.setToolTip('Disable Trail');
             this._trailButton.container.style.backgroundColor = 'transparent';
-            this._trailButton.container.style.border = '1px solid #357aff';
+            this._trailButton.container.style.border = '1px solid#2ad0a9';
             this._trailButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
             
             if (icon) {
