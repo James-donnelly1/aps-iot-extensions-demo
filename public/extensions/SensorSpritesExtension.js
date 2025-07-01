@@ -17,7 +17,7 @@ export class SensorSpritesExtension extends UIBaseExtension {
         this._sprites = [];
         this._trailEnabled = true;
         this._maxTrailLength = 1000;
-        this._updateInterval = 500;
+        this._updateInterval = 100;
         this._mainViewableData = null;
     }
 

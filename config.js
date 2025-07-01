@@ -43,7 +43,7 @@ const CONFIG = {
         },
         
         // Update intervals and performance settings
-        updateInterval: 500, // milliseconds (lower = faster sprite movement)
+        updateInterval: 100, // milliseconds (lower = faster sprite movement)
         maxTrailLength: 1000,
         spriteSize: 12
     },
