@@ -22,8 +22,8 @@ const CONFIG = {
         clientSecret: APS_CLIENT_SECRET,
         // Model Configuration
         model: {
-            urn: 'dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLlVuSzBqTmRMU3JhZlRfakdPR1Fnb1E_dmVyc2lvbj0xMA',
-            view: '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202', // '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202'
+            urn: 'dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLkpZUHZDRVFoUUxDMnFiYXp5enhzUlE_dmVyc2lvbj0x',
+            view: '', // '37fe6109-0f64-447a-bf7f-b984f9fecf23-001bd202'
             defaultFloorIndex: 0
         },
         // Secondary model (if needed)
@@ -46,16 +46,28 @@ const CONFIG = {
         updateInterval: 100, // milliseconds (lower = faster sprite movement)
         maxTrailLength: 1000,
         spriteSize: 12
-    },
+    }
+};
 
-    // Calibration System Configuration (Single calibration only)
-    calibration: {
+// Conditional configuration based on model view
+if (CONFIG.aps.model.view === '') {
+    CONFIG.calibration = {
         viewerDistance: 0.978,
         buildingDistance: 252,
         scaleFactor: 0.978 / 252, // viewerDistance / buildingDistance
-        isCalibrated: true
-    },
+        isCalibrated: false
+    };
+} else {
+    CONFIG.calibration = {
+        viewerDistance: 0.978,
+        buildingDistance: 252,
+        scaleFactor: 0.978 / 252, // viewerDistance / buildingDistance
+        isCalibrated: false
+    };
+}
 
+// Continue with rest of configuration
+Object.assign(CONFIG, {
     // Sprite Configuration
     sprites: {
         configurations: [
@@ -151,7 +163,7 @@ const CONFIG = {
             data: 'Setting up data visualization...'
         }
     }
-};
+});
 
 // Export for Node.js (server-side)
 module.exports = CONFIG;

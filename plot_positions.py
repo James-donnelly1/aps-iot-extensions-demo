@@ -3,7 +3,7 @@
 Simple script to plot position data from APS sensor data files.
 Supports two formats:
 1. Original format: est[x,y,z,value] entries
-2. New format: D338[x,y,z,value,additional_info] entries
+2. Sensor format: [SENSOR_ID][x,y,z,value,additional_info] entries (e.g., D338[...], 9738[...])
 Creates 2D plots with anchor points.
 """
 
@@ -13,13 +13,13 @@ import numpy as np
 from datetime import datetime
 
 def parse_data_file(filename):
-    """Parse the data file and extract timestamps and position data from est[] or D338[] values."""
+    """Parse the data file and extract timestamps and position data from est[] or sensor[] values (with variable sensor IDs)."""
     positions = []
     timestamps = []
     
     # Regular expressions for different formats
     est_pattern = r'est\[([-\d.]+),([-\d.]+),([-\d.]+),([-\d.]+)\]'  # Original format
-    d338_pattern = r'D338\[([-\d.]+|nan),([-\d.]+|nan),([-\d.]+|nan),.*?\]'  # New format
+    sensor_pattern = r'(\w+)\[([-\d.]+|nan),([-\d.]+|nan),([-\d.]+|nan),.*?\]'  # Sensor data format (variable sensor ID)
     
     # Regular expressions for timestamps
     timestamp_pattern1 = r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]'  # Original format
@@ -70,12 +70,12 @@ def parse_data_file(filename):
                     except ValueError:
                         pass
                 
-                # Try new D338[] format
+                # Try sensor data format (variable sensor ID)
                 if not position_found:
-                    d338_match = re.search(d338_pattern, line)
-                    if d338_match:
+                    sensor_match = re.search(sensor_pattern, line)
+                    if sensor_match:
                         try:
-                            x_str, y_str, z_str = d338_match.groups()
+                            sensor_id, x_str, y_str, z_str = sensor_match.groups()
                             # Skip lines with nan values
                             if x_str == 'nan' or y_str == 'nan' or z_str == 'nan':
                                 continue
@@ -83,7 +83,7 @@ def parse_data_file(filename):
                             x, y, z = map(float, [x_str, y_str, z_str])
                             
                             # Extract the 4th value (signal strength or similar)
-                            full_match = re.search(r'D338\[[-\d.]+,[-\d.]+,[-\d.]+,([-\d.]+),.*?\]', line)
+                            full_match = re.search(rf'{sensor_id}\[[-\d.]+,[-\d.]+,[-\d.]+,([-\d.]+),.*?\]', line)
                             if full_match:
                                 value = float(full_match.group(1))
                             else:
@@ -233,17 +233,17 @@ def plot_xy_positions(positions, timestamps):
         print("No position data to plot.")
         return
     
-    # Extract coordinates
+    # Extract coordinates (no transformation needed - axes will be inverted)
     x_coords = [pos[0] for pos in positions]
     y_coords = [pos[1] for pos in positions]
     values = [pos[3] for pos in positions]
     
-    # Define anchor points
+    # Define anchor points (original coordinates)
     anchor_points = [
-        (0, 0, 'Anchor 1'),
-        (0, 11, 'Anchor 2'),
-        (18, 0, 'Anchor 3'),
-        (17.9, 13.3, 'Anchor 4')
+        (0, 0, 'Anchor 1 = DW0980'),
+        (0, 12.32, 'Anchor 2 = DWDB3B'),
+        (18.28, 0, 'Anchor 3 = DWCC11'),
+        (18.44, 12.32, 'Anchor 4 = DWDB2B')
     ]
     
     # Create 2D plot
@@ -280,6 +280,10 @@ def plot_xy_positions(positions, timestamps):
     # Set equal aspect ratio
     ax.set_aspect('equal', adjustable='box')
     
+    # Invert axes to put origin at top right, x positive left, y positive down
+    ax.invert_xaxis()
+    ax.invert_yaxis()
+    
     # Add text annotation with statistics
     stats_text = f"Points: {len(positions)}\nTime: {(timestamps[-1] - timestamps[0]).total_seconds()/60:.1f} min" if timestamps else f"Points: {len(positions)}"
     ax.text(0.02, 0.02, stats_text, transform=ax.transAxes, fontsize=10, 
@@ -290,7 +294,7 @@ def plot_xy_positions(positions, timestamps):
 
 def main():
     """Main function to run the position plotting script."""
-    filename = 'data/Test4'  # Default filename
+    filename = 'data/Test9'  # Default filename
     
     print(f"Parsing data from: {filename}")
     timestamps, positions = parse_data_file(filename)
